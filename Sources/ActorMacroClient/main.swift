@@ -10,7 +10,6 @@ class TestClass {
     let str3: String = "str3"
     var testStruct1: SomeStruct
     let testStruct2: SomeStruct = SomeStruct()
-    let testStruct3 = SomeStruct()
     
     init(str1: String, str2: String, testStruct1: SomeStruct) {
         self.str1 = str1
@@ -40,8 +39,8 @@ class TestClass {
     }
 }
 
-@Actor
-enum Type {}
+//@Actor
+//enum Type {}
 
 @Actor
 struct TestStruct {
@@ -51,7 +50,6 @@ struct TestStruct {
     let str3: String = ""
     var testStruct1: SomeStruct
     let testStruct2: SomeStruct = SomeStruct()
-    let testStruct3 = SomeStruct()
     
     static func testStaticFunc(test: TestStruct) -> String {
         if !test.str3.isEmpty {

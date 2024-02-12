@@ -9,7 +9,7 @@ import Foundation
 
 enum ActorMacroError: Error {
     
-    case noTypeAnnotation(variableName: String)
+    case noTypeAnnotation(_ variableName: String)
     case invalidType
 }
 

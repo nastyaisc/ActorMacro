@@ -24,7 +24,6 @@ final class ActorMacroTests: XCTestCase {
                 let str3: String = "str3"
                 var testStruct1: SomeStruct
                 let testStruct2: SomeStruct = SomeStruct()
-                let testStruct3 = SomeStruct()
                 
                 init(str1: String, str2: String, testStruct1: SomeStruct) {
                     self.str1 = str1
@@ -54,6 +53,58 @@ final class ActorMacroTests: XCTestCase {
                 }
             }
             """,
+            expandedSource: #"""
+            actor TestClassActor {
+
+                private var str1: String
+                private let str2: String
+
+                private let str3: String = "str3"
+                internal func getStr3() -> String {
+                    return str3
+                }
+
+                private var testStruct1: SomeStruct
+                internal func getTestStruct1() -> SomeStruct {
+                    return testStruct1
+                }
+                internal func setTestStruct1(_ testStruct1: SomeStruct) {
+                    self.testStruct1 = testStruct1
+                }
+
+                private let testStruct2: SomeStruct = SomeStruct()
+                internal func getTestStruct2() -> SomeStruct {
+                    return testStruct2
+                }
+
+                init(str1: String, str2: String, testStruct1: SomeStruct) {
+                    self.str1 = str1
+                    self.str2 = str2
+                    self.testStruct1 = testStruct1
+                }
+
+                static func testStaticFunc(test: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return test.str3
+                    }
+                    return ""
+                }
+
+                func testFunc() -> String {
+                    if !str1.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+
+                private func testPrivateFunc(test: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+            }
+            """#,
             macros: testMacros
         )
         #else
@@ -73,7 +124,6 @@ final class ActorMacroTests: XCTestCase {
                 let str3: String = ""
                 var testStruct1: SomeStruct
                 let testStruct2: SomeStruct = SomeStruct()
-                let testStruct3 = SomeStruct()
                 
                 static func testStaticFunc(test: TestStruct) -> String {
                     if !test.str3.isEmpty {
@@ -98,7 +148,50 @@ final class ActorMacroTests: XCTestCase {
             }
             """#,
             expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
+            actor TestStructActor {
+
+                private var str1: String
+                private let str2: String
+
+                private let str3: String = ""
+                internal func getStr3() -> String {
+                    return str3
+                }
+
+                private var testStruct1: SomeStruct
+                internal func getTestStruct1() -> SomeStruct {
+                    return testStruct1
+                }
+                internal func setTestStruct1(_ testStruct1: SomeStruct) {
+                    self.testStruct1 = testStruct1
+                }
+
+                private let testStruct2: SomeStruct = SomeStruct()
+                internal func getTestStruct2() -> SomeStruct {
+                    return testStruct2
+                }
+
+                static func testStaticFunc(test: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return test.str3
+                    }
+                    return ""
+                }
+
+                func testFunc() -> String {
+                    if !str1.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+
+                private func testPrivateFunc(test: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+            }
             """#,
             macros: testMacros
         )

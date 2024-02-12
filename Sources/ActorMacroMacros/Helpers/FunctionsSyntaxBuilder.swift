@@ -18,7 +18,7 @@ struct FunctionsSyntaxBuilder {
         
         guard let returnType = variable.bindings.first?.typeAnnotation?.type else {
             // сделать возможным настройку - нужна ошибка или нет
-            throw ActorMacroError.noTypeAnnotation
+            throw ActorMacroError.noTypeAnnotation(variableName)
         }
         return FunctionDeclSyntax(
             leadingTrivia: .newline,
@@ -45,7 +45,7 @@ struct FunctionsSyntaxBuilder {
         
         guard let variableType = patternBinding.typeAnnotation?.type.as(IdentifierTypeSyntax.self)?.name.text
         else {
-            throw ActorMacroError.noTypeAnnotation(variableName: variableName)
+            throw ActorMacroError.noTypeAnnotation(variableName)
         }
         
         return FunctionDeclSyntax(
