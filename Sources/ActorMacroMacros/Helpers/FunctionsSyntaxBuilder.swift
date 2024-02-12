@@ -9,8 +9,6 @@ import SwiftSyntax
 
 struct FunctionsSyntaxBuilder {
     
-    typealias FunctionParameter = (name: String, type: String)
-    
     static func buildGetFunc(for variable: VariableDeclSyntax) throws -> FunctionDeclSyntax? {
         guard let variableName =  variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
             return nil
@@ -56,8 +54,34 @@ struct FunctionsSyntaxBuilder {
             funcKeyword: TokenSyntax(.keyword(.func), presence: .present),
             name: TokenSyntax(stringLiteral: "set\(StringsHelper.capitalizingFirstLetter(variableName))"),
 //            genericParameterClause: GenericParameterClauseSyntax?,
-            signature: funcSignature(parameters: [(variableName, variableType)], returnType: nil),
-            body: createSetFuncBody((variableName, variableType))
+            signature: funcSignature(parameters: [(variableName, variableType, true)], returnType: nil),
+            body: createSetFuncBody([(variableName, variableType)])
+        )
+    }
+    
+    static func buidInit(variables: [VariableDeclSyntax]) -> InitializerDeclSyntax {
+        var parameters: [FunctionParameter] = []
+
+        variables.forEach { variable in
+            if let patternBinding = variable.bindings.as(PatternBindingListSyntax.self)?.first,
+               // переменной не задано значение по умолчанию
+               patternBinding.initializer == nil,
+               let variableName =  patternBinding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
+               let variableType = patternBinding.typeAnnotation?.type.as(IdentifierTypeSyntax.self)?.name.text {
+                parameters.append((variableName, variableType, false))
+            }
+        }
+        
+        let funcBodyParams: [FunctionBodyParameter] = parameters.compactMap {
+            FunctionBodyParameter($0.0, $0.1)
+        }
+        
+        return InitializerDeclSyntax(
+            leadingTrivia: .newlines(2),
+            modifiers: DeclModifierListSyntax(arrayLiteral: .init(name: .keyword(.internal))),
+            initKeyword: TokenSyntax(stringLiteral: "init"),
+            signature: funcSignature(parameters: parameters, returnType: nil),
+            body: createSetFuncBody(funcBodyParams)
         )
     }
     
@@ -84,26 +108,36 @@ struct FunctionsSyntaxBuilder {
     
     private static func createFunctionParameterList(_ parameters: [FunctionParameter]) -> FunctionParameterListSyntax {
         var functionParameters: [FunctionParameterSyntax] = []
-        parameters.forEach {
-            functionParameters.append(createFunctionParameter($0))
+        parameters.enumerated().forEach {
+            functionParameters.append(
+                createFunctionParameter($1, isLast: $0 == parameters.count - 1)
+            )
         }
         // создаем список параметров функции из отдельных параметров
         return FunctionParameterListSyntax.init(functionParameters)
     }
     
-    private static func createFunctionParameter(_ parameter: FunctionParameter) -> FunctionParameterSyntax {
+    private static func createFunctionParameter(_ parameter: FunctionParameter, isLast: Bool) -> FunctionParameterSyntax {
         // создание одного параметра для функции
         return FunctionParameterSyntax(
-            firstName: TokenSyntax(.wildcard, presence: .present), // нижнее подчеркивание, чтобы при вызове функции параметор модно было игнорировать. В случае, если у параметра нет двух имен, то имя параметра указывается в этом поле, а не следующем
-            secondName: TokenSyntax(stringLiteral: "\(parameter.name)"),
+            firstName: parameter.ignoreName ? .wildcardToken() : TokenSyntax(stringLiteral: "\(parameter.name)"), // нижнее подчеркивание, чтобы при вызове функции параметор модно было игнорировать. В случае, если у параметра нет двух имен, то имя параметра указывается в этом поле, а не следующем
+            secondName: parameter.ignoreName ? TokenSyntax(stringLiteral: "\(parameter.name)") : nil,
             colon: .colonToken(),
-            type: IdentifierTypeSyntax.init(name: .init(stringLiteral: parameter.type))
+            type: IdentifierTypeSyntax.init(name: .init(stringLiteral: parameter.type)),
+            trailingComma: isLast ? nil : .commaToken()
         )
     }
     
-    private static func createSetFuncBody(_ functionParameter: FunctionParameter) -> CodeBlockSyntax {
-        CodeBlockSyntax.init(statements: .init(
-            arrayLiteral: "self.\(raw: functionParameter.name) = \(raw: functionParameter.name)"
-        ))
+    private static func createSetFuncBody(_ functionParameters: [FunctionBodyParameter]) -> CodeBlockSyntax {
+        var statements: [CodeBlockItemSyntax] = []
+        
+        functionParameters.forEach { functionParameter in
+            statements.append(
+                CodeBlockItemSyntax(stringLiteral:  "self.\(functionParameter.name) = \(functionParameter.name)")
+//                CodeBlockItemSyntax(arrayLiteral: "self.\(raw: functionParameter.name) = \(raw: functionParameter.name)"
+//                )
+            )
+        }
+        return CodeBlockSyntax.init(statements: CodeBlockItemListSyntax(statements))
     }
 }

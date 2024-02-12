@@ -45,7 +45,7 @@ final class ActorMacroTests: XCTestCase {
                     return str2
                 }
                 
-                private func testPrivateFunc(test: TestStruct) -> String {
+                private func testPrivateFunc(test: TestStruct, test2: TestStruct) -> String {
                     if !test.str3.isEmpty {
                         return str1
                     }
@@ -54,6 +54,42 @@ final class ActorMacroTests: XCTestCase {
             }
             """,
             expandedSource: #"""
+            class TestClass {
+                
+                private var str1: String
+                private let str2: String
+                let str3: String = "str3"
+                var testStruct1: SomeStruct
+                let testStruct2: SomeStruct = SomeStruct()
+                
+                init(str1: String, str2: String, testStruct1: SomeStruct) {
+                    self.str1 = str1
+                    self.str2 = str2
+                    self.testStruct1 = testStruct1
+                }
+                
+                static func testStaticFunc(test: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return test.str3
+                    }
+                    return ""
+                }
+                
+                func testFunc() -> String {
+                    if !str1.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+                
+                private func testPrivateFunc(test: TestStruct, test2: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+            }
+            
             actor TestClassActor {
 
                 private var str1: String
@@ -97,7 +133,7 @@ final class ActorMacroTests: XCTestCase {
                     return str2
                 }
 
-                private func testPrivateFunc(test: TestStruct) -> String {
+                private func testPrivateFunc(test: TestStruct, test2: TestStruct) -> String {
                     if !test.str3.isEmpty {
                         return str1
                     }
@@ -148,6 +184,36 @@ final class ActorMacroTests: XCTestCase {
             }
             """#,
             expandedSource: #"""
+            struct TestStruct {
+                
+                private var str1: String
+                private let str2: String
+                let str3: String = ""
+                var testStruct1: SomeStruct
+                let testStruct2: SomeStruct = SomeStruct()
+                
+                static func testStaticFunc(test: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return test.str3
+                    }
+                    return ""
+                }
+                
+                func testFunc() -> String {
+                    if !str1.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+                
+                private func testPrivateFunc(test: TestStruct) -> String {
+                    if !test.str3.isEmpty {
+                        return str1
+                    }
+                    return str2
+                }
+            }
+            
             actor TestStructActor {
 
                 private var str1: String
@@ -169,6 +235,12 @@ final class ActorMacroTests: XCTestCase {
                 private let testStruct2: SomeStruct = SomeStruct()
                 internal func getTestStruct2() -> SomeStruct {
                     return testStruct2
+                }
+
+                internal init(str1: String, str2: String, testStruct1: SomeStruct) {
+                    self.str1 = str1
+                    self.str2 = str2
+                    self.testStruct1 = testStruct1
                 }
 
                 static func testStaticFunc(test: TestStruct) -> String {

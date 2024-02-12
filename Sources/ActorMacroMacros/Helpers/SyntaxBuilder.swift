@@ -63,25 +63,43 @@ struct SyntaxBuilder {
     }
     
     private static func extractMembers(_ members: MemberBlockItemListSyntax) throws -> MemberBlockSyntax {
+        var variables: [VariableDeclSyntax] = []
+        var createdMemberBlockItems: [MemberBlockItemSyntax] = []
         var memberBlockItems: [MemberBlockItemSyntax] = []
+         
+        var hasInit = false
         try members.forEach { member in
-            if let variable = member.decl.as(VariableDeclSyntax.self),
-               !variable.isVariablePrivate() {
-                
-                let resultVariable = buildVariable(variable)
-                memberBlockItems.append(MemberBlockItemSyntax(decl: resultVariable))
-                
-                if let getterForVariable = try FunctionsSyntaxBuilder.buildGetFunc(for: variable) {
-                    memberBlockItems.append(MemberBlockItemSyntax(decl: getterForVariable))
-                }
-                if variable.bindingSpecifier.text != "let",
-                   let setterForVariable = try FunctionsSyntaxBuilder.buildSetFunc(for: variable) {
-                    memberBlockItems.append(MemberBlockItemSyntax(decl: setterForVariable))
+            if member.decl.is(InitializerDeclSyntax.self) {
+                hasInit = true
+            }
+            
+            if let variable = member.decl.as(VariableDeclSyntax.self) {
+                variables.append(variable)
+                if !variable.isVariablePrivate() {
+                    let resultVariable = buildVariable(variable)
+                    createdMemberBlockItems.append(MemberBlockItemSyntax(decl: resultVariable))
+                    
+                    if let getterForVariable = try FunctionsSyntaxBuilder.buildGetFunc(for: variable) {
+                        createdMemberBlockItems.append(MemberBlockItemSyntax(decl: getterForVariable))
+                    }
+                    if variable.bindingSpecifier.text != "let",
+                       let setterForVariable = try FunctionsSyntaxBuilder.buildSetFunc(for: variable) {
+                        createdMemberBlockItems.append(MemberBlockItemSyntax(decl: setterForVariable))
+                    }
+                } else {
+                    createdMemberBlockItems.append(StringsHelper.removeLeadingTriviaFromMemberBlock(member))
                 }
             } else {
                 memberBlockItems.append(StringsHelper.removeLeadingTriviaFromMemberBlock(member))
             }
         }
-        return MemberBlockSyntax(members: MemberBlockItemListSyntax(memberBlockItems))
+        
+        // в случае, если у структуры нет нициализатора, генерируем простейший его вид
+        if !hasInit {
+            createdMemberBlockItems.append(MemberBlockItemSyntax(decl: FunctionsSyntaxBuilder.buidInit(variables: variables)))
+        }
+        let resultMembers = createdMemberBlockItems + memberBlockItems
+        
+        return MemberBlockSyntax(members: MemberBlockItemListSyntax(resultMembers))
     }
 }
