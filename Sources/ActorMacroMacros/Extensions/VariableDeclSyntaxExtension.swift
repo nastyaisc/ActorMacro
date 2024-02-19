@@ -9,10 +9,18 @@ import SwiftSyntax
 
 extension VariableDeclSyntax {
     
-    func isVariablePrivate() -> Bool {
+    var isPrivate: Bool {
         for modifier in modifiers {
             if modifier.name.text == "private" { return true }
         }
         return false
+    }
+    
+    var isGetOnly: Bool {
+        bindings.first?.accessorBlock?.accessors.is(CodeBlockItemListSyntax.self) == true
+    }
+    
+    var isStoredProperty: Bool {
+        bindings.first?.accessorBlock == nil
     }
 }

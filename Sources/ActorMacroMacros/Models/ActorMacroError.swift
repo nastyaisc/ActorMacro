@@ -11,6 +11,7 @@ enum ActorMacroError: Error {
     
     case noTypeAnnotation(_ variableName: String)
     case invalidType
+    case invalidVariable(_ variableName: String)
 }
 
 extension ActorMacroError: LocalizedError {
@@ -21,6 +22,8 @@ extension ActorMacroError: LocalizedError {
             return "Для добавления методов get и set необходимо указать тип переменной \(variableName)"
         case .invalidType:
             return "Макрос @Actor может быть применен только к классу или структуре"
+        case .invalidVariable(let variableName):
+            return "Ошибка при обработке \(variableName)"
         }
     }
 }

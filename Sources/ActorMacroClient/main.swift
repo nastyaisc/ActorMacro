@@ -5,15 +5,22 @@ struct SomeStruct {}
 @Actor
 class TestClass {
     
-    private var str1: String
-    private let str2: String
+    var str1: String {
+        return ""
+    }
+    var str2: String {
+        get {
+            return ""
+        }
+        set {
+            print(newValue)
+        }
+    }
     let str3: String = "str3"
     var testStruct1: SomeStruct
     let testStruct2: SomeStruct = SomeStruct()
     
-    init(str1: String, str2: String, testStruct1: SomeStruct) {
-        self.str1 = str1
-        self.str2 = str2
+    init(str2: String, testStruct1: SomeStruct) {
         self.testStruct1 = testStruct1
     }
     
@@ -45,8 +52,17 @@ class TestClass {
 @Actor
 struct TestStruct {
     
-    private var str1: String
-    private let str2: String
+    var str1: String {
+        return ""
+    }
+    var str2: String {
+        get {
+            return ""
+        }
+        set {
+            print(newValue)
+        }
+    }
     let str3: String = ""
     var testStruct1: SomeStruct
     let testStruct2: SomeStruct = SomeStruct()

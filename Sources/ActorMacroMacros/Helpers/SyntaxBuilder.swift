@@ -40,7 +40,7 @@ struct SyntaxBuilder {
         )
     }
     
-    private static func buildVariable(_ variable: VariableDeclSyntax) -> VariableDeclSyntax {
+    private static func buildVariable(_ variable: VariableDeclSyntax) throws -> VariableDeclSyntax {
         /// При использовании готового синтаксиса кода, важно помнить про отступы.
         /// Важно следить, чтобы переменная не имела лишних отступов, например, при использовании код:
         ///        var editableVariable = variable
@@ -53,13 +53,20 @@ struct SyntaxBuilder {
         ///                let testStr: String
         ///
         /// Корректный код:
-        var editableVariable = variable
-        editableVariable.modifiers = .init(arrayLiteral: .init(name: .keyword(.private)))
-        editableVariable.leadingTrivia = .newlines(2)
-        editableVariable.bindingSpecifier.leadingTrivia = .space
+        guard let decl = variable.as(DeclSyntax.self),
+              var newVariable = VariableDeclSyntax(StringsHelper.removeLeadingTriviaFromDecl(decl))
+        else {
+            // THROW
+            throw ActorMacroError.invalidVariable(variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text ?? "?unknown variable name?")
+        }
+        newVariable.modifiers = .init(arrayLiteral: .init(name: .keyword(.private)))
+        newVariable.leadingTrivia = .newlines(2)
+        newVariable.bindingSpecifier.leadingTrivia = .space
+        
+        return newVariable
         /// Результат:
         ///        private let testStr: String
-        return editableVariable
+//        return editableVariable
     }
     
     private static func extractMembers(_ members: MemberBlockItemListSyntax) throws -> MemberBlockSyntax {
@@ -75,22 +82,22 @@ struct SyntaxBuilder {
             
             if let variable = member.decl.as(VariableDeclSyntax.self) {
                 variables.append(variable)
-                if !variable.isVariablePrivate() {
-                    let resultVariable = buildVariable(variable)
+                if !variable.isPrivate {
+                    let resultVariable = try buildVariable(variable)
                     createdMemberBlockItems.append(MemberBlockItemSyntax(decl: resultVariable))
                     
                     if let getterForVariable = try FunctionsSyntaxBuilder.buildGetFunc(for: variable) {
                         createdMemberBlockItems.append(MemberBlockItemSyntax(decl: getterForVariable))
                     }
-                    if variable.bindingSpecifier.text != "let",
+                    if shouldCreateSetFunc(for: variable),
                        let setterForVariable = try FunctionsSyntaxBuilder.buildSetFunc(for: variable) {
                         createdMemberBlockItems.append(MemberBlockItemSyntax(decl: setterForVariable))
                     }
-                } else {
-                    createdMemberBlockItems.append(StringsHelper.removeLeadingTriviaFromMemberBlock(member))
+                } else if let configuredMember = configureMember(member) {
+                    createdMemberBlockItems.append(configuredMember)
                 }
-            } else {
-                memberBlockItems.append(StringsHelper.removeLeadingTriviaFromMemberBlock(member))
+            } else if let configuredMember = configureMember(member) {
+                memberBlockItems.append(configuredMember)
             }
         }
         
@@ -101,5 +108,19 @@ struct SyntaxBuilder {
         let resultMembers = createdMemberBlockItems + memberBlockItems
         
         return MemberBlockSyntax(members: MemberBlockItemListSyntax(resultMembers))
+    }
+    
+    private static func shouldCreateSetFunc(
+        for variable: VariableDeclSyntax
+    ) -> Bool {
+        variable.bindingSpecifier.text != "let" && !variable.isGetOnly
+    }
+    
+    private static func configureMember(
+        _ member: MemberBlockItemSyntax
+    ) -> MemberBlockItemSyntax? {
+        MemberBlockItemSyntax(
+            decl:  StringsHelper.removeLeadingTriviaFromDecl(member.decl)
+        )
     }
 }

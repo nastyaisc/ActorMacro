@@ -18,16 +18,23 @@ final class ActorMacroTests: XCTestCase {
             """
             @Actor
             class TestClass {
-                
-                private var str1: String
-                private let str2: String
+            
+                var str1: String {
+                    return ""
+                }
+                var str2: String {
+                    get {
+                        return ""
+                    }
+                    set {
+                        print(newValue)
+                    }
+                }
                 let str3: String = "str3"
                 var testStruct1: SomeStruct
                 let testStruct2: SomeStruct = SomeStruct()
                 
-                init(str1: String, str2: String, testStruct1: SomeStruct) {
-                    self.str1 = str1
-                    self.str2 = str2
+                init(testStruct1: SomeStruct) {
                     self.testStruct1 = testStruct1
                 }
                 
@@ -45,7 +52,7 @@ final class ActorMacroTests: XCTestCase {
                     return str2
                 }
                 
-                private func testPrivateFunc(test: TestStruct, test2: TestStruct) -> String {
+                private func testPrivateFunc(test: TestStruct) -> String {
                     if !test.str3.isEmpty {
                         return str1
                     }
@@ -55,16 +62,23 @@ final class ActorMacroTests: XCTestCase {
             """,
             expandedSource: #"""
             class TestClass {
-                
-                private var str1: String
-                private let str2: String
+            
+                var str1: String {
+                    return ""
+                }
+                var str2: String {
+                    get {
+                        return ""
+                    }
+                    set {
+                        print(newValue)
+                    }
+                }
                 let str3: String = "str3"
                 var testStruct1: SomeStruct
                 let testStruct2: SomeStruct = SomeStruct()
                 
-                init(str1: String, str2: String, testStruct1: SomeStruct) {
-                    self.str1 = str1
-                    self.str2 = str2
+                init(testStruct1: SomeStruct) {
                     self.testStruct1 = testStruct1
                 }
                 
@@ -82,7 +96,7 @@ final class ActorMacroTests: XCTestCase {
                     return str2
                 }
                 
-                private func testPrivateFunc(test: TestStruct, test2: TestStruct) -> String {
+                private func testPrivateFunc(test: TestStruct) -> String {
                     if !test.str3.isEmpty {
                         return str1
                     }
@@ -92,8 +106,27 @@ final class ActorMacroTests: XCTestCase {
             
             actor TestClassActor {
 
-                private var str1: String
-                private let str2: String
+                private var str1: String {
+                    return ""
+                }
+                internal func getStr1() -> String {
+                    return str1
+                }
+
+                private var str2: String {
+                    get {
+                        return ""
+                    }
+                    set {
+                        print(newValue)
+                    }
+                }
+                internal func getStr2() -> String {
+                    return str2
+                }
+                internal func setStr2(_ str2: String) {
+                    self.str2 = str2
+                }
 
                 private let str3: String = "str3"
                 internal func getStr3() -> String {
@@ -113,9 +146,7 @@ final class ActorMacroTests: XCTestCase {
                     return testStruct2
                 }
 
-                init(str1: String, str2: String, testStruct1: SomeStruct) {
-                    self.str1 = str1
-                    self.str2 = str2
+                init(testStruct1: SomeStruct) {
                     self.testStruct1 = testStruct1
                 }
 
@@ -133,7 +164,7 @@ final class ActorMacroTests: XCTestCase {
                     return str2
                 }
 
-                private func testPrivateFunc(test: TestStruct, test2: TestStruct) -> String {
+                private func testPrivateFunc(test: TestStruct) -> String {
                     if !test.str3.isEmpty {
                         return str1
                     }
@@ -155,8 +186,17 @@ final class ActorMacroTests: XCTestCase {
             @Actor
             struct TestStruct {
                 
-                private var str1: String
-                private let str2: String
+                var str1: String {
+                    return ""
+                }
+                var str2: String {
+                    get {
+                        return ""
+                    }
+                    set {
+                        print(newValue)
+                    }
+                }
                 let str3: String = ""
                 var testStruct1: SomeStruct
                 let testStruct2: SomeStruct = SomeStruct()
@@ -186,8 +226,17 @@ final class ActorMacroTests: XCTestCase {
             expandedSource: #"""
             struct TestStruct {
                 
-                private var str1: String
-                private let str2: String
+                var str1: String {
+                    return ""
+                }
+                var str2: String {
+                    get {
+                        return ""
+                    }
+                    set {
+                        print(newValue)
+                    }
+                }
                 let str3: String = ""
                 var testStruct1: SomeStruct
                 let testStruct2: SomeStruct = SomeStruct()
@@ -216,8 +265,27 @@ final class ActorMacroTests: XCTestCase {
             
             actor TestStructActor {
 
-                private var str1: String
-                private let str2: String
+                private var str1: String {
+                    return ""
+                }
+                internal func getStr1() -> String {
+                    return str1
+                }
+            
+                private var str2: String {
+                    get {
+                        return ""
+                    }
+                    set {
+                        print(newValue)
+                    }
+                }
+                internal func getStr2() -> String {
+                    return str2
+                }
+                internal func setStr2(_ str2: String) {
+                    self.str2 = str2
+                }
 
                 private let str3: String = ""
                 internal func getStr3() -> String {
@@ -237,9 +305,7 @@ final class ActorMacroTests: XCTestCase {
                     return testStruct2
                 }
 
-                internal init(str1: String, str2: String, testStruct1: SomeStruct) {
-                    self.str1 = str1
-                    self.str2 = str2
+                internal init(testStruct1: SomeStruct) {
                     self.testStruct1 = testStruct1
                 }
 

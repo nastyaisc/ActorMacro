@@ -63,7 +63,8 @@ struct FunctionsSyntaxBuilder {
         var parameters: [FunctionParameter] = []
 
         variables.forEach { variable in
-            if let patternBinding = variable.bindings.as(PatternBindingListSyntax.self)?.first,
+            if variable.isStoredProperty,
+                let patternBinding = variable.bindings.as(PatternBindingListSyntax.self)?.first,
                // переменной не задано значение по умолчанию
                patternBinding.initializer == nil,
                let variableName =  patternBinding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
