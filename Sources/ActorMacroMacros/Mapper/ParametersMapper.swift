@@ -1,5 +1,5 @@
 //
-//  ArgumentsMapper.swift
+//  ParametersMapper.swift
 //
 //
 //  Created by Анастасия Ищенко on 29.02.2024.
@@ -7,7 +7,7 @@
 
 import SwiftSyntax
 
-struct ArgumentsMapper {
+struct ParametersMapper {
     
     static func mapProtectionLevel(_ level: LabeledExprSyntax?) -> DeclModifierListSyntax? {
         guard let name = level?.expression.as(MemberAccessExprSyntax.self)?.declName.baseName.text

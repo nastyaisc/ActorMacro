@@ -26,7 +26,7 @@ public struct ActorMacro: PeerMacro {
         if let classSyntax = declaration.as(ClassDeclSyntax.self),
            let declSyntax = try syntaxBuilder.buildClass(
             classSyntax,
-            with: ArgumentsMapper.mapProtectionLevel(node.arguments?.as(LabeledExprListSyntax.self)?.first)
+            with: ParametersMapper.mapProtectionLevel(node.arguments?.as(LabeledExprListSyntax.self)?.first)
            ).as(DeclSyntax.self) {
             return [declSyntax]
         } else if let structSyntax = declaration.as(StructDeclSyntax.self),
