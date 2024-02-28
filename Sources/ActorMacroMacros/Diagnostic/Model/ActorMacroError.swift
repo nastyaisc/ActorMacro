@@ -1,5 +1,5 @@
 //
-//  ActorMacroDiagnostic.swift
+//  ActorMacroError.swift
 //
 //
 //  Created by Анастасия Ищенко on 07.02.2024.
