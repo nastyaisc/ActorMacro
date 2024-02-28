@@ -16,7 +16,7 @@ final class ActorMacroTests: XCTestCase {
         #if canImport(ActorMacroMacros)
         assertMacroExpansion(
             """
-            @Actor
+            @Actor(.private_)
             class TestClass {
             
                 var str1: String {
@@ -104,12 +104,12 @@ final class ActorMacroTests: XCTestCase {
                 }
             }
             
-            actor TestClassActor {
+            private actor TestClassActor {
 
                 private var str1: String {
                     return ""
                 }
-                internal func getStr1() -> String {
+                func getStr1() -> String {
                     return str1
                 }
 
@@ -121,28 +121,28 @@ final class ActorMacroTests: XCTestCase {
                         print(newValue)
                     }
                 }
-                internal func getStr2() -> String {
+                func getStr2() -> String {
                     return str2
                 }
-                internal func setStr2(_ str2: String) {
+                func setStr2(_ str2: String) {
                     self.str2 = str2
                 }
 
                 private let str3: String = "str3"
-                internal func getStr3() -> String {
+                func getStr3() -> String {
                     return str3
                 }
 
                 private var testStruct1: SomeStruct
-                internal func getTestStruct1() -> SomeStruct {
+                func getTestStruct1() -> SomeStruct {
                     return testStruct1
                 }
-                internal func setTestStruct1(_ testStruct1: SomeStruct) {
+                func setTestStruct1(_ testStruct1: SomeStruct) {
                     self.testStruct1 = testStruct1
                 }
 
                 private let testStruct2: SomeStruct = SomeStruct()
-                internal func getTestStruct2() -> SomeStruct {
+                func getTestStruct2() -> SomeStruct {
                     return testStruct2
                 }
 
@@ -183,7 +183,7 @@ final class ActorMacroTests: XCTestCase {
         #if canImport(ActorMacroMacros)
         assertMacroExpansion(
             #"""
-            @Actor
+            @Actor(.internal_)
             struct TestStruct {
                 
                 var str1: String {
@@ -268,7 +268,7 @@ final class ActorMacroTests: XCTestCase {
                 private var str1: String {
                     return ""
                 }
-                internal func getStr1() -> String {
+                func getStr1() -> String {
                     return str1
                 }
             
@@ -280,32 +280,32 @@ final class ActorMacroTests: XCTestCase {
                         print(newValue)
                     }
                 }
-                internal func getStr2() -> String {
+                func getStr2() -> String {
                     return str2
                 }
-                internal func setStr2(_ str2: String) {
+                func setStr2(_ str2: String) {
                     self.str2 = str2
                 }
 
                 private let str3: String = ""
-                internal func getStr3() -> String {
+                func getStr3() -> String {
                     return str3
                 }
 
                 private var testStruct1: SomeStruct
-                internal func getTestStruct1() -> SomeStruct {
+                func getTestStruct1() -> SomeStruct {
                     return testStruct1
                 }
-                internal func setTestStruct1(_ testStruct1: SomeStruct) {
+                func setTestStruct1(_ testStruct1: SomeStruct) {
                     self.testStruct1 = testStruct1
                 }
 
                 private let testStruct2: SomeStruct = SomeStruct()
-                internal func getTestStruct2() -> SomeStruct {
+                func getTestStruct2() -> SomeStruct {
                     return testStruct2
                 }
 
-                internal init(testStruct1: SomeStruct) {
+                init(testStruct1: SomeStruct) {
                     self.testStruct1 = testStruct1
                 }
 

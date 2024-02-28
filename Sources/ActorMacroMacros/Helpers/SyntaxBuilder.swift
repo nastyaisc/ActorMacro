@@ -6,15 +6,24 @@
 //
 
 import SwiftSyntax
+import SwiftSyntaxMacros
 
-struct SyntaxBuilder {
+final class SyntaxBuilder: DiagnosticCapableBase {
     
-    static func buildClass(_ classSyntax: ClassDeclSyntax) throws -> ActorDeclSyntax {
+    private lazy var functionsBuilder = FunctionsSyntaxBuilder(
+        node: node,
+        context: context
+    )
+    
+    func buildClass(
+        _ classSyntax: ClassDeclSyntax,
+        with modifiers: DeclModifierListSyntax?
+    ) throws -> ActorDeclSyntax {
         let className = classSyntax.name
         let members = classSyntax.memberBlock.members
         
         return ActorDeclSyntax(
-            modifiers: classSyntax.modifiers,
+            modifiers: modifiers ?? classSyntax.modifiers,
             actorKeyword: .init(.keyword(.actor), presence: .present),
             name: TokenSyntax(stringLiteral: "\(className.text)Actor"),
             genericParameterClause: classSyntax.genericParameterClause,
@@ -25,7 +34,7 @@ struct SyntaxBuilder {
         
     }
     
-    static func buildStruct(_ structSyntax: StructDeclSyntax) throws -> ActorDeclSyntax {
+    func buildStruct(_ structSyntax: StructDeclSyntax) throws -> ActorDeclSyntax {
         let structName = structSyntax.name
         let members = structSyntax.memberBlock.members
         
@@ -40,7 +49,7 @@ struct SyntaxBuilder {
         )
     }
     
-    private static func buildVariable(_ variable: VariableDeclSyntax) throws -> VariableDeclSyntax {
+    private func buildVariable(_ variable: VariableDeclSyntax) throws -> VariableDeclSyntax? {
         /// При использовании готового синтаксиса кода, важно помнить про отступы.
         /// Важно следить, чтобы переменная не имела лишних отступов, например, при использовании код:
         ///        var editableVariable = variable
@@ -56,8 +65,10 @@ struct SyntaxBuilder {
         guard let decl = variable.as(DeclSyntax.self),
               var newVariable = VariableDeclSyntax(StringsHelper.removeLeadingTriviaFromDecl(decl))
         else {
-            // THROW
-            throw ActorMacroError.invalidVariable(variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text ?? "?unknown variable name?")
+            try showDiagnostic(
+                ActorMacroError.invalidVariable(variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text ?? "?unknown variable name?")
+            )
+            return nil
         }
         newVariable.modifiers = .init(arrayLiteral: .init(name: .keyword(.private)))
         newVariable.leadingTrivia = .newlines(2)
@@ -69,7 +80,7 @@ struct SyntaxBuilder {
 //        return editableVariable
     }
     
-    private static func extractMembers(_ members: MemberBlockItemListSyntax) throws -> MemberBlockSyntax {
+    private func extractMembers(_ members: MemberBlockItemListSyntax) throws -> MemberBlockSyntax {
         var variables: [VariableDeclSyntax] = []
         var createdMemberBlockItems: [MemberBlockItemSyntax] = []
         var memberBlockItems: [MemberBlockItemSyntax] = []
@@ -83,14 +94,15 @@ struct SyntaxBuilder {
             if let variable = member.decl.as(VariableDeclSyntax.self) {
                 variables.append(variable)
                 if !variable.isPrivate {
-                    let resultVariable = try buildVariable(variable)
-                    createdMemberBlockItems.append(MemberBlockItemSyntax(decl: resultVariable))
+                    if let resultVariable = try buildVariable(variable) {
+                        createdMemberBlockItems.append(MemberBlockItemSyntax(decl: resultVariable))
+                    }
                     
-                    if let getterForVariable = try FunctionsSyntaxBuilder.buildGetFunc(for: variable) {
+                    if let getterForVariable = try functionsBuilder.buildGetFunc(for: variable) {
                         createdMemberBlockItems.append(MemberBlockItemSyntax(decl: getterForVariable))
                     }
                     if shouldCreateSetFunc(for: variable),
-                       let setterForVariable = try FunctionsSyntaxBuilder.buildSetFunc(for: variable) {
+                       let setterForVariable = try functionsBuilder.buildSetFunc(for: variable) {
                         createdMemberBlockItems.append(MemberBlockItemSyntax(decl: setterForVariable))
                     }
                 } else if let configuredMember = configureMember(member) {
@@ -103,20 +115,20 @@ struct SyntaxBuilder {
         
         // в случае, если у структуры нет нициализатора, генерируем простейший его вид
         if !hasInit {
-            createdMemberBlockItems.append(MemberBlockItemSyntax(decl: FunctionsSyntaxBuilder.buidInit(variables: variables)))
+            createdMemberBlockItems.append(MemberBlockItemSyntax(decl: functionsBuilder.buidInit(variables: variables)))
         }
         let resultMembers = createdMemberBlockItems + memberBlockItems
         
         return MemberBlockSyntax(members: MemberBlockItemListSyntax(resultMembers))
     }
     
-    private static func shouldCreateSetFunc(
+    private func shouldCreateSetFunc(
         for variable: VariableDeclSyntax
     ) -> Bool {
         variable.bindingSpecifier.text != "let" && !variable.isGetOnly
     }
     
-    private static func configureMember(
+    private func configureMember(
         _ member: MemberBlockItemSyntax
     ) -> MemberBlockItemSyntax? {
         MemberBlockItemSyntax(

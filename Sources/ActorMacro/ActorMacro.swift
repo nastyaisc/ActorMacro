@@ -1,3 +1,6 @@
 
 @attached(peer, names: suffixed(Actor))
-public macro Actor() = #externalMacro(module: "ActorMacroMacros", type: "ActorMacro")
+public macro Actor(_ actorProtectionLevel: ProtectionLevel?) = #externalMacro(
+    module: "ActorMacroMacros",
+    type: "ActorMacro"
+)

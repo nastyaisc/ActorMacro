@@ -2,7 +2,7 @@ import ActorMacro
 
 struct SomeStruct {}
 
-@Actor
+@Actor(.fileprivate_)
 class TestClass {
     
     var str1: String {
@@ -18,7 +18,7 @@ class TestClass {
     }
     let str3: String = "str3"
     var testStruct1: SomeStruct
-    let testStruct2: SomeStruct = SomeStruct()
+    let testStruct2 = SomeStruct()
     
     init(str2: String, testStruct1: SomeStruct) {
         self.testStruct1 = testStruct1
@@ -49,7 +49,7 @@ class TestClass {
 //@Actor
 //enum Type {}
 
-@Actor
+//@Actor
 struct TestStruct {
     
     var str1: String {

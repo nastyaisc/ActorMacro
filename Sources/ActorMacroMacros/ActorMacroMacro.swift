@@ -2,6 +2,7 @@ import SwiftCompilerPlugin
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import SwiftDiagnostics
 
 /// Все  функции просто перенести в новый актор
 /// переменные сделать приватными и создать для каждой методы гет и сет
@@ -20,14 +21,19 @@ public struct ActorMacro: PeerMacro {
         providingPeersOf declaration: some SwiftSyntax.DeclSyntaxProtocol,
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) throws -> [SwiftSyntax.DeclSyntax] {
+        let syntaxBuilder = SyntaxBuilder(node: node, context: context)
         
         if let classSyntax = declaration.as(ClassDeclSyntax.self),
-           let declSyntax = try SyntaxBuilder.buildClass(classSyntax).as(DeclSyntax.self) {
+           let declSyntax = try syntaxBuilder.buildClass(
+            classSyntax,
+            with: ArgumentsMapper.mapProtectionLevel(node.arguments?.as(LabeledExprListSyntax.self)?.first)
+           ).as(DeclSyntax.self) {
             return [declSyntax]
         } else if let structSyntax = declaration.as(StructDeclSyntax.self),
-                  let declSyntax = try SyntaxBuilder.buildStruct(structSyntax).as(DeclSyntax.self) {
+                  let declSyntax = try syntaxBuilder.buildStruct(structSyntax).as(DeclSyntax.self) {
             return [declSyntax]
         } else {
+            context.diagnose(Diagnostic(node: node, message: ActorMacroError.invalidType))
             throw ActorMacroError.invalidType
         }
     }

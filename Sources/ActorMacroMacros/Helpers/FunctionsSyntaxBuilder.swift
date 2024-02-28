@@ -7,25 +7,23 @@
 
 import SwiftSyntax
 
-struct FunctionsSyntaxBuilder {
+final class FunctionsSyntaxBuilder: DiagnosticCapableBase {
     
-    static func buildGetFunc(for variable: VariableDeclSyntax) throws -> FunctionDeclSyntax? {
+    func buildGetFunc(for variable: VariableDeclSyntax) throws -> FunctionDeclSyntax? {
         guard let variableName =  variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
             return nil
         }
         
         guard let returnType = variable.bindings.first?.typeAnnotation?.type else {
             // сделать возможным настройку - нужна ошибка или нет
-            throw ActorMacroError.noTypeAnnotation(variableName)
+            try showDiagnostic(ActorMacroError.noTypeAnnotation(variableName))
+            return nil
         }
         return FunctionDeclSyntax(
             leadingTrivia: .newline,
             // эквивалентные строки:
-//            modifiers: .init(arrayLiteral: .init(name: "internal")),
-            modifiers: DeclModifierListSyntax(arrayLiteral: .init(name: .keyword(.internal))),
-            // эквивалентные строки:
 //            funcKeyword: .init(stringInterpolation: "func"),
-            funcKeyword: TokenSyntax(.keyword(.func), presence: .present),
+            funcKeyword: .keyword(.func),
             name: TokenSyntax(stringLiteral: "get\(StringsHelper.capitalizingFirstLetter(variableName))"),
             // доделать дженерики?
 //            genericParameterClause: GenericParameterClauseSyntax?,
@@ -34,7 +32,7 @@ struct FunctionsSyntaxBuilder {
         )
     }
     
-    static func buildSetFunc(for variable: VariableDeclSyntax) throws -> FunctionDeclSyntax? {
+    func buildSetFunc(for variable: VariableDeclSyntax) throws -> FunctionDeclSyntax? {
         guard let patternBinding = variable.bindings.as(PatternBindingListSyntax.self)?.first,
               let variableName =  patternBinding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
         else {
@@ -43,15 +41,14 @@ struct FunctionsSyntaxBuilder {
         
         guard let variableType = patternBinding.typeAnnotation?.type.as(IdentifierTypeSyntax.self)?.name.text
         else {
-            throw ActorMacroError.noTypeAnnotation(variableName)
+            try showDiagnostic(ActorMacroError.noTypeAnnotation(variableName))
+            return nil
         }
         
         return FunctionDeclSyntax(
             leadingTrivia: .newline,
-//            modifiers: .init(arrayLiteral: .init(name: "internal")),
-            modifiers: DeclModifierListSyntax(arrayLiteral: .init(name: .keyword(.internal))),
 //            funcKeyword: .init(stringInterpolation: "func"),
-            funcKeyword: TokenSyntax(.keyword(.func), presence: .present),
+            funcKeyword: .keyword(.func),
             name: TokenSyntax(stringLiteral: "set\(StringsHelper.capitalizingFirstLetter(variableName))"),
 //            genericParameterClause: GenericParameterClauseSyntax?,
             signature: funcSignature(parameters: [(variableName, variableType, true)], returnType: nil),
@@ -59,7 +56,7 @@ struct FunctionsSyntaxBuilder {
         )
     }
     
-    static func buidInit(variables: [VariableDeclSyntax]) -> InitializerDeclSyntax {
+    func buidInit(variables: [VariableDeclSyntax]) -> InitializerDeclSyntax {
         var parameters: [FunctionParameter] = []
 
         variables.forEach { variable in
@@ -79,18 +76,17 @@ struct FunctionsSyntaxBuilder {
         
         return InitializerDeclSyntax(
             leadingTrivia: .newlines(2),
-            modifiers: DeclModifierListSyntax(arrayLiteral: .init(name: .keyword(.internal))),
             initKeyword: TokenSyntax(stringLiteral: "init"),
             signature: funcSignature(parameters: parameters, returnType: nil),
             body: createSetFuncBody(funcBodyParams)
         )
     }
     
-    private static func createGetFuncBody(_ variableName: String) -> CodeBlockSyntax {
+    private func createGetFuncBody(_ variableName: String) -> CodeBlockSyntax {
         CodeBlockSyntax.init(statements: .init(arrayLiteral: "return \(raw: variableName)"))
     }
     
-    private static func funcSignature(
+    private func funcSignature(
         parameters: [FunctionParameter],
         returnType: TypeSyntax?
     ) -> FunctionSignatureSyntax {
@@ -107,7 +103,7 @@ struct FunctionsSyntaxBuilder {
         }
     }
     
-    private static func createFunctionParameterList(_ parameters: [FunctionParameter]) -> FunctionParameterListSyntax {
+    private func createFunctionParameterList(_ parameters: [FunctionParameter]) -> FunctionParameterListSyntax {
         var functionParameters: [FunctionParameterSyntax] = []
         parameters.enumerated().forEach {
             functionParameters.append(
@@ -118,7 +114,7 @@ struct FunctionsSyntaxBuilder {
         return FunctionParameterListSyntax.init(functionParameters)
     }
     
-    private static func createFunctionParameter(_ parameter: FunctionParameter, isLast: Bool) -> FunctionParameterSyntax {
+    private func createFunctionParameter(_ parameter: FunctionParameter, isLast: Bool) -> FunctionParameterSyntax {
         // создание одного параметра для функции
         return FunctionParameterSyntax(
             firstName: parameter.ignoreName ? .wildcardToken() : TokenSyntax(stringLiteral: "\(parameter.name)"), // нижнее подчеркивание, чтобы при вызове функции параметор модно было игнорировать. В случае, если у параметра нет двух имен, то имя параметра указывается в этом поле, а не следующем
@@ -129,7 +125,7 @@ struct FunctionsSyntaxBuilder {
         )
     }
     
-    private static func createSetFuncBody(_ functionParameters: [FunctionBodyParameter]) -> CodeBlockSyntax {
+    private func createSetFuncBody(_ functionParameters: [FunctionBodyParameter]) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
         
         functionParameters.forEach { functionParameter in
