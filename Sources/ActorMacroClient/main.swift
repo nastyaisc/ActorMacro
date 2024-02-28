@@ -2,7 +2,7 @@ import ActorMacro
 
 struct SomeStruct {}
 
-@Actor(.fileprivate_)
+@Actor(nil)
 class TestClass {
     
     var str1: String {
