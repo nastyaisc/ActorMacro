@@ -9,9 +9,11 @@ import SwiftSyntax
 
 struct ParametersMapper {
     
-    static func mapProtectionLevel(_ level: LabeledExprSyntax?) -> DeclModifierListSyntax? {
+    static func mapProtectionLevel(_ level: LabeledExprSyntax?) -> DeclModifierSyntax? {
         guard let name = level?.expression.as(MemberAccessExprSyntax.self)?.declName.baseName.text
         else { return nil }
-        return DeclModifierListSyntax(arrayLiteral: .init(name: TokenSyntax(stringLiteral: String(name.dropLast()))))
+        return DeclModifierSyntax(
+            name: TokenSyntax(stringLiteral: String(name.dropLast()))
+        )
     }
 }

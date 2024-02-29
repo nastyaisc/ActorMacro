@@ -15,32 +15,47 @@ final class SyntaxBuilder: DiagnosticCapableBase {
         context: context
     )
     
-    func buildClass(
-        _ classSyntax: ClassDeclSyntax,
-        with modifiers: DeclModifierListSyntax?
+    func buildActor(
+        from classSyntax: ClassDeclSyntax,
+        with modifier: DeclModifierSyntax?
     ) throws -> ActorDeclSyntax {
         let className = classSyntax.name
+        // все члены класса
         let members = classSyntax.memberBlock.members
         
-        return ActorDeclSyntax(
-            modifiers: modifiers ?? classSyntax.modifiers,
-            actorKeyword: .init(.keyword(.actor), presence: .present),
-            name: TokenSyntax(stringLiteral: "\(className.text)Actor"),
-            genericParameterClause: classSyntax.genericParameterClause,
-            inheritanceClause: classSyntax.inheritanceClause,
-            genericWhereClause: classSyntax.genericWhereClause,
-            memberBlock: try extractMembers(members)
-        )
+        // преобразование DeclModifierSyntax в DeclModifierListSyntax -  необходимо для инициализатора ActorDeclSyntax
+        var modifiers = classSyntax.modifiers
+        // если модификатор доступа не установлен пользователем, то используем модификатор доступа класса, к которому присоединен макрос
+        if let modifier {
+            modifiers = DeclModifierListSyntax(arrayLiteral: modifier)
+        }
         
+        return ActorDeclSyntax(
+            modifiers: modifiers, // наш модификатор доступа
+            actorKeyword: .keyword(.actor), // влючевое слово actor перед названием актора
+            name: TokenSyntax(stringLiteral: "\(className.text)Actor"), // название актора
+            genericParameterClause: classSyntax.genericParameterClause, // если родительский класс был дженериком, то актор тоже будет
+            inheritanceClause: classSyntax.inheritanceClause, // наследование, подписка на протоколы
+            genericWhereClause: classSyntax.genericWhereClause, // условие whwrw для дженерика
+            memberBlock: try extractMembers(members) // измененные члены класса
+        )
     }
     
-    func buildStruct(_ structSyntax: StructDeclSyntax) throws -> ActorDeclSyntax {
+    func buildActor(
+        from structSyntax: StructDeclSyntax,
+        with modifier: DeclModifierSyntax?
+    ) throws -> ActorDeclSyntax {
         let structName = structSyntax.name
         let members = structSyntax.memberBlock.members
         
+        var modifiers = structSyntax.modifiers
+        if let modifier {
+            modifiers = DeclModifierListSyntax(arrayLiteral: modifier)
+        }
+        
         return ActorDeclSyntax(
-            modifiers: structSyntax.modifiers,
-            actorKeyword: .init(.keyword(.actor), presence: .present),
+            modifiers: modifiers,
+            actorKeyword: .keyword(.actor),
             name: TokenSyntax(stringLiteral: "\(structName.text)Actor"),
             genericParameterClause: structSyntax.genericParameterClause,
             inheritanceClause: structSyntax.inheritanceClause,

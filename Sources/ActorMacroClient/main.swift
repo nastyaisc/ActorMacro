@@ -7,6 +7,7 @@ class SmallTestClass {
     
     let strLet: String
     var strVar: String = "str2"
+    private var strPrivate: String
     
     var strGet: String {
         get {
@@ -14,9 +15,10 @@ class SmallTestClass {
         }
     }
     
-    init(strLet: String, strVar: String) {
+    init(strLet: String, strVar: String, strPrivate: String) {
         self.strLet = strLet
         self.strVar = strVar
+        self.strPrivate = strPrivate
     }
     
     func funcForTest() {

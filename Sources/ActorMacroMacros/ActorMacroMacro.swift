@@ -22,15 +22,21 @@ public struct ActorMacro: PeerMacro {
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) throws -> [SwiftSyntax.DeclSyntax] {
         let syntaxBuilder = SyntaxBuilder(node: node, context: context)
+        let protectionLevel = ParametersMapper.mapProtectionLevel(
+            node.arguments?.as(LabeledExprListSyntax.self)?.first
+        )
         
         if let classSyntax = declaration.as(ClassDeclSyntax.self),
-           let declSyntax = try syntaxBuilder.buildClass(
-            classSyntax,
-            with: ParametersMapper.mapProtectionLevel(node.arguments?.as(LabeledExprListSyntax.self)?.first)
+           let declSyntax = try syntaxBuilder.buildActor(
+            from: classSyntax,
+            with: protectionLevel
            ).as(DeclSyntax.self) {
             return [declSyntax]
         } else if let structSyntax = declaration.as(StructDeclSyntax.self),
-                  let declSyntax = try syntaxBuilder.buildStruct(structSyntax).as(DeclSyntax.self) {
+                  let declSyntax = try syntaxBuilder.buildActor(
+                    from: structSyntax,
+                    with: protectionLevel
+                  ).as(DeclSyntax.self) {
             return [declSyntax]
         } else {
             context.diagnose(Diagnostic(node: node, message: ActorMacroError.invalidType))
