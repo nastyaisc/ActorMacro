@@ -2,6 +2,32 @@ import ActorMacro
 
 struct SomeStruct {}
 
+@Actor(.public_)
+class SmallTestClass {
+    
+    let strLet: String
+    var strVar: String = "str2"
+    
+    var strGet: String {
+        get {
+            "strGet"
+        }
+    }
+    
+    init(strLet: String, strVar: String) {
+        self.strLet = strLet
+        self.strVar = strVar
+    }
+    
+    func funcForTest() {
+        if strVar.isEmpty {
+            print("strVar is empty")
+        } else {
+            print("strVar is not empty")
+        }
+    }
+}
+
 @Actor(nil)
 class TestClass {
     

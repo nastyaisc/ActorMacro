@@ -17,7 +17,7 @@ extension VariableDeclSyntax {
     }
     
     var isGetOnly: Bool {
-        bindings.first?.accessorBlock?.accessors.is(CodeBlockItemListSyntax.self) == true
+        bindings.first?.accessorBlock?.accessors.is(CodeBlockItemListSyntax.self) == true || bindings.first?.accessorBlock?.accessors.as(AccessorDeclListSyntax.self)?.count == 1
     }
     
     var isStoredProperty: Bool {

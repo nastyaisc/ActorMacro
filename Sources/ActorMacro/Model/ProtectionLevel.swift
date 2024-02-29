@@ -7,5 +7,5 @@
 
 public enum ProtectionLevel {
     
-    case private_, fileprivate_, internal_, public_, open_
+    case private_, fileprivate_, internal_, public_
 }

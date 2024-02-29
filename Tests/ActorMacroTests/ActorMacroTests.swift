@@ -12,6 +12,107 @@ let testMacros: [String: Macro.Type] = [
 #endif
 
 final class ActorMacroTests: XCTestCase {
+    
+    func testMacroWithSmallClass() throws {
+        #if canImport(ActorMacroMacros)
+        assertMacroExpansion("""
+            @Actor(.public_)
+            class SmallTestClass {
+                
+                let strLet: String
+                var strVar: String = "str2"
+                
+                var strGet: String {
+                    get {
+                        "strGet"
+                    }
+                }
+                
+                init(strLet: String, strVar: String) {
+                    self.strLet = strLet
+                    self.strVar = strVar
+                }
+                
+                func funcForTest() {
+                    if strVar.isEmpty {
+                        print("strVar is empty")
+                    } else {
+                        print("strVar is not empty")
+                    }
+                }
+            }
+            """,
+            expandedSource: #"""
+            class SmallTestClass {
+                
+                let strLet: String
+                var strVar: String = "str2"
+                
+                var strGet: String {
+                    get {
+                        "strGet"
+                    }
+                }
+                
+                init(strLet: String, strVar: String) {
+                    self.strLet = strLet
+                    self.strVar = strVar
+                }
+                
+                func funcForTest() {
+                    if strVar.isEmpty {
+                        print("strVar is empty")
+                    } else {
+                        print("strVar is not empty")
+                    }
+                }
+            }
+            
+            public actor SmallTestClassActor {
+            
+                private let strLet: String
+                func getStrLet() -> String {
+                    return strLet
+                }
+            
+                private var strVar: String = "str2"
+                func getStrVar() -> String {
+                    return strVar
+                }
+                func setStrVar(_ strVar: String) {
+                    self.strVar = strVar
+                }
+            
+                private var strGet: String {
+                    get {
+                        "strGet"
+                    }
+                }
+                func getStrGet() -> String {
+                    return strGet
+                }
+            
+                init(strLet: String, strVar: String) {
+                    self.strLet = strLet
+                    self.strVar = strVar
+                }
+            
+                func funcForTest() {
+                    if strVar.isEmpty {
+                        print("strVar is empty")
+                    } else {
+                        print("strVar is not empty")
+                    }
+                }
+            }
+            """#,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+    
     func testMacroWithClass() throws {
         #if canImport(ActorMacroMacros)
         assertMacroExpansion(
