@@ -64,7 +64,7 @@ final class SyntaxBuilder: DiagnosticCapableBase {
         )
     }
     
-    private func buildVariable(_ variable: VariableDeclSyntax) throws -> VariableDeclSyntax? {
+    private func buildVariable(_ variable: VariableDeclSyntax) throws -> VariableDeclSyntax {
         /// При использовании готового синтаксиса кода, важно помнить про отступы.
         /// Важно следить, чтобы переменная не имела лишних отступов, например, при использовании код:
         ///        var editableVariable = variable
@@ -81,9 +81,10 @@ final class SyntaxBuilder: DiagnosticCapableBase {
               var newVariable = VariableDeclSyntax(StringsHelper.removeLeadingTriviaFromDecl(decl))
         else {
             try showDiagnostic(
-                ActorMacroError.invalidVariable(variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text ?? "?unknown variable name?")
+                ActorMacroError.invalidVariable(variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text ?? "?unknown variable name?"),
+                position: variable.positionAfterSkippingLeadingTrivia
             )
-            return nil
+            return variable
         }
         newVariable.modifiers = .init(arrayLiteral: .init(name: .keyword(.private)))
         newVariable.leadingTrivia = .newlines(2)
@@ -109,17 +110,9 @@ final class SyntaxBuilder: DiagnosticCapableBase {
             if let variable = member.decl.as(VariableDeclSyntax.self) {
                 variables.append(variable)
                 if !variable.isPrivate {
-                    if let resultVariable = try buildVariable(variable) {
-                        createdMemberBlockItems.append(MemberBlockItemSyntax(decl: resultVariable))
-                    }
-                    
-                    if let getterForVariable = try functionsBuilder.buildGetFunc(for: variable) {
-                        createdMemberBlockItems.append(MemberBlockItemSyntax(decl: getterForVariable))
-                    }
-                    if shouldCreateSetFunc(for: variable),
-                       let setterForVariable = try functionsBuilder.buildSetFunc(for: variable) {
-                        createdMemberBlockItems.append(MemberBlockItemSyntax(decl: setterForVariable))
-                    }
+                    let resultVariable = try buildVariable(variable)
+                    createdMemberBlockItems.append(MemberBlockItemSyntax(decl: resultVariable))
+                    createdMemberBlockItems.append(contentsOf: try functionsBuilder.buildSetGetFuncs(for: variable))
                 } else if let configuredMember = configureMember(member) {
                     createdMemberBlockItems.append(configuredMember)
                 }
@@ -137,11 +130,6 @@ final class SyntaxBuilder: DiagnosticCapableBase {
         return MemberBlockSyntax(members: MemberBlockItemListSyntax(resultMembers))
     }
     
-    private func shouldCreateSetFunc(
-        for variable: VariableDeclSyntax
-    ) -> Bool {
-        variable.bindingSpecifier.text != "let" && !variable.isGetOnly
-    }
     
     private func configureMember(
         _ member: MemberBlockItemSyntax

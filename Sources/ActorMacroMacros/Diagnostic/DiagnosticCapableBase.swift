@@ -19,13 +19,13 @@ class DiagnosticCapableBase {
         self.context = context
     }
     
-    func showDiagnostic(_ error: ActorMacroError) throws {
+    func showDiagnostic(_ error: ActorMacroError, position: AbsolutePosition? = nil) throws {
         switch error.severity {
         case .error:
-            context.diagnose(Diagnostic(node: node, message: error))
             throw error
         default:
-            context.diagnose(Diagnostic(node: node, message: error))
+            context.diagnose(Diagnostic(node: node, position: position, message: error))
+//            context.diagnose(Diagnostic(node: node, message: error))
         }
     }
 }

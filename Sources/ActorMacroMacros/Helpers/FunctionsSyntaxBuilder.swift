@@ -9,17 +9,45 @@ import SwiftSyntax
 
 final class FunctionsSyntaxBuilder: DiagnosticCapableBase {
     
-    func buildGetFunc(for variable: VariableDeclSyntax) throws -> FunctionDeclSyntax? {
+    func buildSetGetFuncs(for variable: VariableDeclSyntax) throws -> [MemberBlockItemSyntax] {
         guard let variableName =  variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
-            return nil
+            try showDiagnostic(
+                ActorMacroError.noVariableTypeAnnotation("?unknown_variable_name?"),
+                position: variable.positionAfterSkippingLeadingTrivia
+            )
+            return []
         }
         
-        guard let returnType = variable.bindings.first?.typeAnnotation?.type else {
-            // сделать возможным настройку - нужна ошибка или нет
-            try showDiagnostic(ActorMacroError.noTypeAnnotation(variableName))
-            return nil
+        guard let variableType = variable.bindings.first?.typeAnnotation?.type else {
+            try showDiagnostic(
+                ActorMacroError.noVariableTypeAnnotation(variableName),
+                position: variable.positionAfterSkippingLeadingTrivia
+            )
+            return []
         }
-        return FunctionDeclSyntax(
+        
+        var resultFuncs: [MemberBlockItemSyntax] = []
+        if let getterForVariable = try buildGetFunc(
+            variableName: variableName,
+            variableType: variableType
+        ) {
+            resultFuncs.append(MemberBlockItemSyntax(decl: getterForVariable))
+        }
+        if SyntaxHelper.shouldCreateSetFunc(for: variable), // фнкция set добавляется только к изменяемым stored property
+           let setterForVariable = try buildSetFunc(
+            variableName: variableName,
+            variableType: variableType
+           ) {
+            resultFuncs.append(MemberBlockItemSyntax(decl: setterForVariable))
+        }
+        return resultFuncs
+    }
+    
+    private func buildGetFunc(
+        variableName: String,
+        variableType: TypeSyntax
+    ) throws -> FunctionDeclSyntax? {
+        FunctionDeclSyntax(
             leadingTrivia: .newline,
             // эквивалентные строки:
 //            funcKeyword: .init(stringInterpolation: "func"),
@@ -27,21 +55,16 @@ final class FunctionsSyntaxBuilder: DiagnosticCapableBase {
             name: TokenSyntax(stringLiteral: "get\(StringsHelper.capitalizingFirstLetter(variableName))"),
             // доделать дженерики?
 //            genericParameterClause: GenericParameterClauseSyntax?,
-            signature: funcSignature(parameters: [], returnType: returnType),
+            signature: funcSignature(parameters: [], returnType: variableType),
             body: createGetFuncBody(variableName)
         )
     }
     
-    func buildSetFunc(for variable: VariableDeclSyntax) throws -> FunctionDeclSyntax? {
-        guard let patternBinding = variable.bindings.as(PatternBindingListSyntax.self)?.first,
-              let variableName =  patternBinding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
-        else {
-            return nil
-        }
-        
-        guard let variableType = patternBinding.typeAnnotation?.type.as(IdentifierTypeSyntax.self)?.name.text
-        else {
-            try showDiagnostic(ActorMacroError.noTypeAnnotation(variableName))
+    private func buildSetFunc(
+        variableName: String,
+        variableType: TypeSyntax
+    ) throws -> FunctionDeclSyntax? {
+        guard let variableTypeStr = variableType.as(IdentifierTypeSyntax.self)?.name.text else {
             return nil
         }
         
@@ -51,8 +74,11 @@ final class FunctionsSyntaxBuilder: DiagnosticCapableBase {
             funcKeyword: .keyword(.func),
             name: TokenSyntax(stringLiteral: "set\(StringsHelper.capitalizingFirstLetter(variableName))"),
 //            genericParameterClause: GenericParameterClauseSyntax?,
-            signature: funcSignature(parameters: [(variableName, variableType, true)], returnType: nil),
-            body: createSetFuncBody([(variableName, variableType)])
+            signature: funcSignature(
+                parameters: [(variableName, variableTypeStr, true)],
+                returnType: nil
+            ),
+            body: createSetFuncBody([(variableName, variableTypeStr)])
         )
     }
     

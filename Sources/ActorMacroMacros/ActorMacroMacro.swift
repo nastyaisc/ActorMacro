@@ -39,7 +39,6 @@ public struct ActorMacro: PeerMacro {
                   ).as(DeclSyntax.self) {
             return [declSyntax]
         } else {
-            context.diagnose(Diagnostic(node: node, message: ActorMacroError.invalidType))
             throw ActorMacroError.invalidType
         }
     }

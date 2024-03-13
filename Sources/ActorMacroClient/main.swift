@@ -2,6 +2,9 @@ import ActorMacro
 
 struct SomeStruct {}
 
+//@Actor(.public_)
+enum SmallTestEnum {}
+
 @Actor(.public_)
 class SmallTestClass {
     
