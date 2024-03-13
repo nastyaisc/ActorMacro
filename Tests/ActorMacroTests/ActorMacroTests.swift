@@ -364,7 +364,7 @@ final class ActorMacroTests: XCTestCase {
                 }
             }
             
-            actor TestStructActor {
+            internal actor TestStructActor {
 
                 private var str1: String {
                     return ""
