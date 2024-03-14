@@ -12,7 +12,7 @@ final class FunctionsSyntaxBuilder: DiagnosticCapableBase {
     func buildSetGetFuncs(for variable: VariableDeclSyntax) throws -> [MemberBlockItemSyntax] {
         guard let variableName =  variable.bindings.as(PatternBindingListSyntax.self)?.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
             try showDiagnostic(
-                ActorMacroError.noVariableTypeAnnotation("?unknown_variable_name?"),
+                ActorMacroError.invalidVariable("?unknown_variable_name?"),
                 position: variable.positionAfterSkippingLeadingTrivia
             )
             return []

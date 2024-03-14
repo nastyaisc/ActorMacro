@@ -25,7 +25,6 @@ class DiagnosticCapableBase {
             throw error
         default:
             context.diagnose(Diagnostic(node: node, position: position, message: error))
-//            context.diagnose(Diagnostic(node: node, message: error))
         }
     }
 }
